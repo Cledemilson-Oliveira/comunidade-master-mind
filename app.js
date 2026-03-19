@@ -2,8 +2,8 @@ const SUPABASE_URL = "https://bqskqjygbrkskqxurpir.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_htJYZHMv236djJoNWD2Ivw_DA_Eh8hu";
 
 const hasSupabaseConfig =
-  SUPABASE_URL && SUPABASE_URL.startsWith("http") &&
-  SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("COLE_SUA");
+  SUPABASE_URL && SUPABASE_URL.startsWith("https://bqskqjygbrkskqxurpir.supabase.co") &&
+  SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("sb_publishable_htJYZHMv236djJoNWD2Ivw_DA_Eh8hu");
 
 const supabaseClient = hasSupabaseConfig
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
