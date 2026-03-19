@@ -1,5 +1,5 @@
-const SUPABASE_URL = "COLE_SUA_SUPABASE_URL_AQUI";
-const SUPABASE_ANON_KEY = "COLE_SUA_SUPABASE_ANON_KEY_AQUI";
+const SUPABASE_URL = "https://bqskqjygbrkskqxurpir.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_htJYZHMv236djJoNWD2Ivw_DA_Eh8hu";
 
 const hasSupabaseConfig =
   SUPABASE_URL && SUPABASE_URL.startsWith("http") &&
