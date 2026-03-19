@@ -1,5 +1,5 @@
-const SUPABASE_URL = "COLE_AQUI_SUA_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "COLE_AQUI_SUA_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://bqskqjygbrkskqxurpir.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_htJYZHMv236djJoNWD2Ivw_DA_Eh8hu";
 
 const state = {
   currentUser: null,
