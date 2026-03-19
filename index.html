@@ -1,162 +1,305 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Comunidade Master Mind</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="Comunidade Master Mind - renda extra, área de membros, produtos, materiais, relacionamento e gestão de acesso com Supabase." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
+  <div class="bg-grid"></div>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
 
-<!-- HEADER -->
-<header class="header">
-  <h2>Comunidade Master Mind</h2>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="#inicio" class="brand">
+        <span class="brand-icon">MM</span>
+        <span>
+          <strong>Comunidade Master Mind</strong>
+          <small>Renda extra, crescimento e relacionamento</small>
+        </span>
+      </a>
 
-  <nav id="mainNav">
-    <a href="#inicio">Início</a>
-    <a href="#membros">Área de Membros</a>
-    <a href="#produtos">Produtos</a>
-    <a href="#materiais">Materiais</a>
-    <a href="#vip">VIP</a>
-    <a href="#admin">Admin</a>
-  </nav>
+      <nav class="main-nav" id="mainNav">
+        <a href="#inicio">Início</a>
+        <a href="#membros">Área de Membros</a>
+        <a href="#relacionamento">Relacionamento</a>
+        <a href="#produtos">Produtos</a>
+        <a href="#materiais">Materiais</a>
+        <a href="#vip">VIP</a>
+        <a href="#admin">Admin</a>
+      </nav>
 
-  <button id="menuBtn">☰</button>
-
-  <!-- BOTÃO CORRETO -->
-  <button id="openAuthBtn" class="btn">Entrar</button>
-</header>
-
-<!-- HERO -->
-<section id="inicio" class="hero">
-  <h1>Construa renda na internet com uma comunidade forte</h1>
-  <p>Aprenda, compartilhe e cresça com outros membros.</p>
-</section>
-
-<!-- MODAL DE LOGIN -->
-<div class="modal hidden" id="authModal">
-  
-  <div class="modal-backdrop" id="closeAuthBackdrop"></div>
-
-  <div class="modal-card">
-
-    <button id="closeAuthBtn" class="modal-close">×</button>
-
-    <!-- ABAS -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="register">Cadastro</button>
-      <button class="tab-btn" data-tab="login">Login</button>
+      <div class="nav-actions">
+        <button class="btn btn-ghost" id="openAuthBtn">Entrar</button>
+        <button class="menu-btn" id="menuBtn" aria-label="Abrir menu">☰</button>
+      </div>
     </div>
+  </header>
 
-    <div id="messageBox" class="message hidden"></div>
+  <main>
+    <section class="hero" id="inicio">
+      <div class="container hero-content">
+        <div class="hero-text">
+          <span class="badge">Comunidade • Estratégia • Escala</span>
+          <h1>Construa uma nova fonte de renda através da internet com uma comunidade feita para crescimento real.</h1>
+          <p>
+            Uma plataforma completa para atrair, cadastrar, engajar e desenvolver membros da sua comunidade, com área VIP,
+            espaço de relacionamento, biblioteca de materiais, produtos com checkout e painel de administração.
+          </p>
+          <div class="hero-buttons">
+            <a href="#membros" class="btn btn-primary">Conhecer a comunidade</a>
+            <a href="#produtos" class="btn btn-secondary">Ver produtos</a>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-card"><strong>Área de membros</strong><span>acesso por nível</span></div>
+            <div class="stat-card"><strong>Produtos</strong><span>com checkout e suporte</span></div>
+            <div class="stat-card"><strong>Admin</strong><span>controle completo</span></div>
+          </div>
+        </div>
 
-    <!-- CADASTRO -->
-    <form id="registerForm">
-      <input id="registerNome" placeholder="Nome completo" required>
-      <input id="registerEmail" placeholder="Email" required>
-      <input id="registerTelefone" placeholder="Telefone" required>
-      <input id="registerCpf" placeholder="CPF" required>
-      <input id="registerSenha" type="password" placeholder="Senha" required>
-      <button type="submit">Criar conta</button>
-    </form>
+        <div class="hero-panel">
+          <div class="glass-card">
+            <div class="card-top">
+              <span class="pill orange">Sistema profissional</span>
+              <span class="pill green">Online</span>
+            </div>
+            <h3>Um sistema pensado para você, membro e administrador.</h3>
+            <p>Cadastro e login com Supabase. Controle de acesso iniciante, VIP e admin. Cadastro de produtos com checkout e suporte.</p>
+            <ul>
+              <li>Relacionamento entre membros</li>
+              <li>Biblioteca de materiais</li>
+              <li>Painel de gestão para Cledemilson Oliveira</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <!-- LOGIN -->
-    <form id="loginForm" class="hidden">
-      <input id="loginEmail" placeholder="Email" required>
-      <input id="loginSenha" type="password" placeholder="Senha" required>
-      <button type="submit">Entrar</button>
-    </form>
+    <section class="section" id="membros">
+      <div class="container">
+        <div class="section-head center">
+          <span class="section-tag">Área de membros</span>
+          <h2>Ambiente interno para desenvolvimento da comunidade</h2>
+          <p>Depois do login, o membro pode visualizar seu perfil, nível de acesso e navegar pelas áreas liberadas.</p>
+        </div>
 
+        <div class="dashboard-grid">
+          <article class="panel-card">
+            <h3>Perfil do membro</h3>
+            <div class="profile-grid compact">
+              <div class="profile-item"><span>Nome</span><strong id="profileNome">Visitante</strong></div>
+              <div class="profile-item"><span>E-mail</span><strong id="profileEmail">-</strong></div>
+              <div class="profile-item"><span>Nível</span><strong id="profileNivel">iniciante</strong></div>
+              <div class="profile-item"><span>Status</span><strong id="profileStatus">não logado</strong></div>
+            </div>
+          </article>
+
+          <article class="panel-card">
+            <h3>Acesso rápido</h3>
+            <div class="quick-links">
+              <a href="#relacionamento" class="quick-link">Comunidade</a>
+              <a href="#materiais" class="quick-link">Materiais</a>
+              <a href="#produtos" class="quick-link">Produtos</a>
+              <a href="#vip" class="quick-link">Área VIP</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="relacionamento">
+      <div class="container">
+        <div class="section-head center">
+          <span class="section-tag">Relacionamento</span>
+          <h2>Espaço para conexão entre membros</h2>
+          <p>Publique mensagens, atualizações e experiências para fortalecer a comunidade.</p>
+        </div>
+
+        <div class="two-col">
+          <div class="panel-card">
+            <h3>Publicar no mural</h3>
+            <form id="postForm" class="stack-form">
+              <textarea id="postContent" rows="5" placeholder="Compartilhe uma dica, resultado ou mensagem para a comunidade..."></textarea>
+              <button type="submit" class="btn btn-primary">Publicar</button>
+            </form>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-title-row">
+              <h3>Mural da comunidade</h3>
+              <button class="btn btn-small btn-ghost" id="refreshPostsBtn">Atualizar</button>
+            </div>
+            <div id="postsList" class="list-wrap empty-state">Nenhuma publicação ainda.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="produtos">
+      <div class="container">
+        <div class="section-head center">
+          <span class="section-tag">Produtos</span>
+          <h2>Vitrine de produtos da comunidade</h2>
+          <p>Cadastre produtos com checkout, nome do membro responsável e WhatsApp para suporte ao cliente.</p>
+        </div>
+
+        <div class="two-col">
+          <div class="panel-card" id="productFormCard">
+            <h3>Cadastrar produto</h3>
+            <form id="productForm" class="stack-form">
+              <input type="text" id="productTitle" placeholder="Nome do produto" required>
+              <textarea id="productDescription" rows="4" placeholder="Descrição do produto" required></textarea>
+              <input type="url" id="productCheckout" placeholder="Link de checkout" required>
+              <input type="text" id="productMemberName" placeholder="Nome do membro que cadastrou" required>
+              <input type="text" id="productWhatsapp" placeholder="WhatsApp de suporte" required>
+              <select id="productVisibility">
+                <option value="publico">Público</option>
+                <option value="vip">VIP</option>
+              </select>
+              <button type="submit" class="btn btn-primary">Salvar produto</button>
+            </form>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-title-row">
+              <h3>Produtos cadastrados</h3>
+              <button class="btn btn-small btn-ghost" id="refreshProductsBtn">Atualizar</button>
+            </div>
+            <div id="productsList" class="cards-list empty-state">Nenhum produto cadastrado.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="materiais">
+      <div class="container">
+        <div class="section-head center">
+          <span class="section-tag">Materiais</span>
+          <h2>Biblioteca para ajudar o crescimento da comunidade</h2>
+          <p>Cadastre links úteis, treinamentos, PDFs, vídeos e ferramentas para apoiar os membros.</p>
+        </div>
+
+        <div class="two-col">
+          <div class="panel-card" id="materialFormCard">
+            <h3>Cadastrar material</h3>
+            <form id="materialForm" class="stack-form">
+              <input type="text" id="materialTitle" placeholder="Título do material" required>
+              <textarea id="materialDescription" rows="4" placeholder="Descrição do material" required></textarea>
+              <input type="url" id="materialUrl" placeholder="Link do material" required>
+              <select id="materialLevel">
+                <option value="iniciante">Iniciante</option>
+                <option value="vip">VIP</option>
+              </select>
+              <button type="submit" class="btn btn-primary">Salvar material</button>
+            </form>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-title-row">
+              <h3>Materiais disponíveis</h3>
+              <button class="btn btn-small btn-ghost" id="refreshMaterialsBtn">Atualizar</button>
+            </div>
+            <div id="materialsList" class="cards-list empty-state">Nenhum material cadastrado.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section vip-section" id="vip">
+      <div class="container">
+        <div class="section-head center light">
+          <span class="section-tag">VIP</span>
+          <h2>Espaço exclusivo para membros VIP</h2>
+          <p>Essa área aparece apenas para usuários com nível VIP ou admin.</p>
+        </div>
+
+        <div class="vip-box" id="vipLocked">
+          <h3>Conteúdo bloqueado</h3>
+          <p>Faça login com uma conta VIP ou admin para acessar esta área exclusiva.</p>
+        </div>
+
+        <div class="vip-box hidden" id="vipContent">
+          <h3>Conteúdo VIP liberado</h3>
+          <ul class="vip-list">
+            <li>Estratégias avançadas de crescimento</li>
+            <li>Materiais premium e direcionamentos exclusivos</li>
+            <li>Produtos reservados e oportunidades especiais</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="admin">
+      <div class="container">
+        <div class="section-head center">
+          <span class="section-tag">Administração</span>
+          <h2>Painel de gestão para Cledemilson Oliveira</h2>
+          <p>Gerencie níveis de acesso, membros e conteúdos da comunidade.</p>
+        </div>
+
+        <div class="panel-card admin-only hidden" id="adminPanel">
+          <div class="panel-title-row">
+            <h3>Gerenciar membros</h3>
+            <button class="btn btn-small btn-ghost" id="refreshMembersBtn">Atualizar</button>
+          </div>
+          <div id="membersList" class="cards-list empty-state">Nenhum membro carregado.</div>
+        </div>
+
+        <div class="vip-box" id="adminLocked">
+          <h3>Acesso administrativo necessário</h3>
+          <p>Entre com uma conta admin para gerenciar membros, níveis e acessos.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-wrap">
+      <div>
+        <strong>Comunidade Master Mind</strong>
+        <p>Projeto criado por Cledemilson Oliveira para crescimento, relacionamento e renda extra no digital.</p>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-ghost" id="logoutBtn">Sair</button>
+      </div>
+    </div>
+  </footer>
+
+  <div class="modal hidden" id="authModal">
+    <div class="modal-backdrop" id="closeAuthBackdrop"></div>
+    <div class="modal-card">
+      <button class="modal-close" id="closeAuthBtn">×</button>
+      <div class="auth-switch">
+        <button class="tab-btn active" data-tab="register">Cadastro</button>
+        <button class="tab-btn" data-tab="login">Login</button>
+      </div>
+
+      <div class="message hidden" id="messageBox"></div>
+
+      <form id="registerForm" class="stack-form auth-tab">
+        <input type="text" id="registerNome" placeholder="Nome completo" required>
+        <input type="email" id="registerEmail" placeholder="E-mail" required>
+        <input type="text" id="registerTelefone" placeholder="Telefone" required>
+        <input type="text" id="registerCpf" placeholder="CPF" required>
+        <input type="password" id="registerSenha" placeholder="Senha" required>
+        <button type="submit" class="btn btn-primary">Criar conta</button>
+      </form>
+
+      <form id="loginForm" class="stack-form auth-tab hidden">
+        <input type="email" id="loginEmail" placeholder="E-mail" required>
+        <input type="password" id="loginSenha" placeholder="Senha" required>
+        <button type="submit" class="btn btn-primary">Entrar</button>
+      </form>
+    </div>
   </div>
-</div>
-
-<!-- ÁREA MEMBROS -->
-<section id="membros">
-  <h2>Área de Membros</h2>
-  <p id="profileNome"></p>
-  <p id="profileEmail"></p>
-  <p id="profileNivel"></p>
-  <p id="profileStatus"></p>
-</section>
-
-<!-- POSTS -->
-<section>
-  <h2>Comunidade</h2>
-  <form id="postForm">
-    <textarea id="postContent"></textarea>
-    <button type="submit">Publicar</button>
-  </form>
-  <div id="postsList"></div>
-  <button id="refreshPostsBtn">Atualizar</button>
-</section>
-
-<!-- PRODUTOS -->
-<section id="produtos">
-  <h2>Produtos</h2>
-
-  <div id="productFormCard">
-    <form id="productForm">
-      <input id="productTitle" placeholder="Nome">
-      <input id="productDescription" placeholder="Descrição">
-      <input id="productCheckout" placeholder="Link checkout">
-      <input id="productMemberName" placeholder="Seu nome">
-      <input id="productWhatsapp" placeholder="WhatsApp">
-      <select id="productVisibility">
-        <option value="publico">Público</option>
-        <option value="vip">VIP</option>
-      </select>
-      <button type="submit">Cadastrar</button>
-    </form>
-  </div>
-
-  <div id="productsList"></div>
-  <button id="refreshProductsBtn">Atualizar</button>
-</section>
-
-<!-- MATERIAIS -->
-<section id="materiais">
-  <h2>Materiais</h2>
-
-  <div id="materialFormCard">
-    <form id="materialForm">
-      <input id="materialTitle" placeholder="Título">
-      <input id="materialDescription" placeholder="Descrição">
-      <input id="materialUrl" placeholder="Link">
-      <select id="materialLevel">
-        <option value="iniciante">Iniciante</option>
-        <option value="vip">VIP</option>
-      </select>
-      <button type="submit">Cadastrar</button>
-    </form>
-  </div>
-
-  <div id="materialsList"></div>
-  <button id="refreshMaterialsBtn">Atualizar</button>
-</section>
-
-<!-- VIP -->
-<section id="vip">
-  <div id="vipLocked">Área VIP bloqueada</div>
-  <div id="vipContent" class="hidden">Conteúdo VIP liberado</div>
-</section>
-
-<!-- ADMIN -->
-<section id="admin">
-  <div id="adminLocked">Acesso restrito</div>
-  <div id="adminPanel" class="hidden">
-    <div id="membersList"></div>
-    <button id="refreshMembersBtn">Atualizar membros</button>
-  </div>
-</section>
-
-<button id="logoutBtn">Sair</button>
-
-<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- APP -->
-<script src="app.js"></script>
-
+  <script src="app.js"></script>
 </body>
 </html>
