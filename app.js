@@ -91,9 +91,9 @@ function updateUI() {
 }
 
 async function loadProfile() {
-  if (!supabaseClient || !state.user) return;
+  if (!supabase || !state.user) return;
 
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("profiles")
     .select("id,nome,email,telefone,cpf,role,status")
     .eq("id", state.user.id)
@@ -104,13 +104,13 @@ async function loadProfile() {
 }
 
 async function checkUser() {
-  if (!supabaseClient) {
+  if (!supabase) {
     updateUI();
     renderConfigWarnings();
     return;
   }
 
-  const { data } = await supabaseClient.auth.getUser();
+  const { data } = await supabase.auth.getUser();
   state.user = data?.user || null;
   if (state.user) await loadProfile();
   updateUI();
@@ -126,8 +126,8 @@ function renderConfigWarnings() {
 }
 
 async function loadPosts() {
-  if (!supabaseClient) return;
-  const { data, error } = await supabaseClient
+  if (!supabase) return;
+  const { data, error } = await supabase
     .from("community_posts")
     .select("id,content,created_at,profiles(nome)")
     .order("created_at", { ascending: false })
@@ -148,9 +148,9 @@ async function loadPosts() {
 }
 
 async function loadProducts() {
-  if (!supabaseClient) return;
+  if (!supabase) return;
   const isVip = state.profile && (state.profile.role === "vip" || state.profile.role === "admin");
-  let query = supabaseClient
+  let query = supabase
     .from("products")
     .select("id,title,description,checkout_url,member_name,whatsapp,visibility,created_at")
     .order("created_at", { ascending: false });
@@ -178,12 +178,12 @@ async function loadProducts() {
 }
 
 async function loadMaterials() {
-  if (!supabaseClient) return;
+  if (!supabase) return;
   const role = state.profile?.role || "iniciante";
   let allowedLevels = ["iniciante"];
   if (role === "vip" || role === "admin") allowedLevels = ["iniciante", "vip"];
 
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("materials")
     .select("id,title,description,url,level,created_at")
     .in("level", allowedLevels)
@@ -207,8 +207,8 @@ async function loadMaterials() {
 }
 
 async function loadMembers() {
-  if (!supabaseClient || state.profile?.role !== "admin") return;
-  const { data, error } = await supabaseClient
+  if (!supabase || state.profile?.role !== "admin") return;
+  const { data, error } = await supabase
     .from("profiles")
     .select("id,nome,email,role,status,created_at")
     .order("created_at", { ascending: false });
@@ -234,8 +234,8 @@ async function loadMembers() {
 }
 
 window.updateMemberRole = async function(userId, role) {
-  if (!supabaseClient || state.profile?.role !== "admin") return;
-  const { error } = await supabaseClient
+  if (!supabase || state.profile?.role !== "admin") return;
+  const { error } = await supabase
     .from("profiles")
     .update({ role })
     .eq("id", userId);
@@ -263,7 +263,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click
 
 els.registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!supabaseClient) return showMessage("Configure o Supabase no app.js.", "error");
+  if (!supabase) return showMessage("Configure o Supabase no app.js.", "error");
   hideMessage();
 
   const nome = document.getElementById("registerNome").value.trim();
@@ -272,13 +272,13 @@ els.registerForm.addEventListener("submit", async (e) => {
   const cpf = sanitizeCpf(document.getElementById("registerCpf").value.trim());
   const senha = document.getElementById("registerSenha").value;
 
-  const { data, error } = await supabaseClient.auth.signUp({ email, password: senha });
+  const { data, error } = await supabase.auth.signUp({ email, password: senha });
   if (error) return showMessage(error.message, "error");
 
   const user = data.user;
   if (!user) return showMessage("Usuário não retornado no cadastro.", "error");
 
-  const { error: profileError } = await supabaseClient.from("profiles").insert({
+  const { error: profileError } = await supabase.from("profiles").insert({
     id: user.id,
     nome,
     email,
@@ -296,12 +296,12 @@ els.registerForm.addEventListener("submit", async (e) => {
 
 els.loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!supabaseClient) return showMessage("Configure o Supabase no app.js.", "error");
+  if (!supabase) return showMessage("Configure o Supabase no app.js.", "error");
   hideMessage();
 
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginSenha").value;
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return showMessage(error.message, "error");
 
   state.user = data.user;
@@ -312,8 +312,8 @@ els.loginForm.addEventListener("submit", async (e) => {
 });
 
 els.logoutBtn.addEventListener("click", async () => {
-  if (!supabaseClient) return;
-  await supabaseClient.auth.signOut();
+  if (!supabase) return;
+  await supabase.auth.signOut();
   state.user = null;
   state.profile = null;
   updateUI();
@@ -322,11 +322,11 @@ els.logoutBtn.addEventListener("click", async () => {
 
 els.postForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!supabaseClient || !state.user) return alert("Faça login para publicar.");
+  if (!supabase || !state.user) return alert("Faça login para publicar.");
   const content = document.getElementById("postContent").value.trim();
   if (!content) return;
 
-  const { error } = await supabaseClient.from("community_posts").insert({ user_id: state.user.id, content });
+  const { error } = await supabase.from("community_posts").insert({ user_id: state.user.id, content });
   if (error) return alert(error.message);
   e.target.reset();
   await loadPosts();
@@ -334,7 +334,7 @@ els.postForm.addEventListener("submit", async (e) => {
 
 els.productForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!supabaseClient || !state.user) return alert("Faça login para cadastrar produtos.");
+  if (!supabase || !state.user) return alert("Faça login para cadastrar produtos.");
 
   const payload = {
     title: document.getElementById("productTitle").value.trim(),
@@ -346,7 +346,7 @@ els.productForm.addEventListener("submit", async (e) => {
     created_by: state.user.id,
   };
 
-  const { error } = await supabaseClient.from("products").insert(payload);
+  const { error } = await supabase.from("products").insert(payload);
   if (error) return alert(error.message);
   e.target.reset();
   await loadProducts();
@@ -354,7 +354,7 @@ els.productForm.addEventListener("submit", async (e) => {
 
 els.materialForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!supabaseClient || state.profile?.role !== "admin") return alert("Somente admin pode cadastrar materiais.");
+  if (!supabase || state.profile?.role !== "admin") return alert("Somente admin pode cadastrar materiais.");
 
   const payload = {
     title: document.getElementById("materialTitle").value.trim(),
@@ -364,7 +364,7 @@ els.materialForm.addEventListener("submit", async (e) => {
     created_by: state.user.id,
   };
 
-  const { error } = await supabaseClient.from("materials").insert(payload);
+  const { error } = await supabase.from("materials").insert(payload);
   if (error) return alert(error.message);
   e.target.reset();
   await loadMaterials();
