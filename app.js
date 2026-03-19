@@ -41,24 +41,40 @@ const els = {
 };
 
 function showMessage(text, type = "success") {
+  if (!els.messageBox) return;
   els.messageBox.textContent = text;
   els.messageBox.className = `message ${type}`;
 }
 
 function hideMessage() {
+  if (!els.messageBox) return;
   els.messageBox.className = "message hidden";
   els.messageBox.textContent = "";
 }
 
-function openAuthModal() { els.authModal.classList.remove("hidden"); }
-function closeAuthModal() { els.authModal.classList.add("hidden"); hideMessage(); }
+function openAuthModal() {
+  if (!els.authModal) return;
+  els.authModal.classList.remove("hidden");
+}
+
+function closeAuthModal() {
+  if (!els.authModal) return;
+  els.authModal.classList.add("hidden");
+  hideMessage();
+}
 
 function setTab(tabName) {
-  document.querySelectorAll(".tab-btn").forEach(btn => {
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.tab === tabName);
   });
-  els.registerForm.classList.toggle("hidden", tabName !== "register");
-  els.loginForm.classList.toggle("hidden", tabName !== "login");
+
+  if (els.registerForm) {
+    els.registerForm.classList.toggle("hidden", tabName !== "register");
+  }
+
+  if (els.loginForm) {
+    els.loginForm.classList.toggle("hidden", tabName !== "login");
+  }
 }
 
 function formatDate(date) {
@@ -66,8 +82,13 @@ function formatDate(date) {
   return new Date(date).toLocaleString("pt-BR");
 }
 
-function sanitizePhone(v) { return (v || "").replace(/\D/g, ""); }
-function sanitizeCpf(v) { return (v || "").replace(/\D/g, ""); }
+function sanitizePhone(v) {
+  return (v || "").replace(/\D/g, "");
+}
+
+function sanitizeCpf(v) {
+  return (v || "").replace(/\D/g, "");
+}
 
 function updateUI() {
   const profile = state.profile;
@@ -75,19 +96,22 @@ function updateUI() {
   const isVip = profile && (profile.role === "vip" || profile.role === "admin");
   const isAdmin = profile && profile.role === "admin";
 
-  els.profileNome.textContent = profile?.nome || "Visitante";
-  els.profileEmail.textContent = profile?.email || "-";
-  els.profileNivel.textContent = profile?.role || "iniciante";
-  els.profileStatus.textContent = isLogged ? "logado" : "não logado";
-  els.openAuthBtn.textContent = isLogged ? "Minha conta" : "Entrar";
+  if (els.profileNome) els.profileNome.textContent = profile?.nome || "Visitante";
+  if (els.profileEmail) els.profileEmail.textContent = profile?.email || "-";
+  if (els.profileNivel) els.profileNivel.textContent = profile?.role || "iniciante";
+  if (els.profileStatus) els.profileStatus.textContent = isLogged ? "logado" : "não logado";
+  if (els.openAuthBtn) els.openAuthBtn.textContent = isLogged ? "Minha conta" : "Entrar";
 
-  els.vipLocked.classList.toggle("hidden", isVip);
-  els.vipContent.classList.toggle("hidden", !isVip);
-  els.adminPanel.classList.toggle("hidden", !isAdmin);
-  els.adminLocked.classList.toggle("hidden", isAdmin);
+  if (els.vipLocked) els.vipLocked.classList.toggle("hidden", !!isVip);
+  if (els.vipContent) els.vipContent.classList.toggle("hidden", !isVip);
+  if (els.adminPanel) els.adminPanel.classList.toggle("hidden", !isAdmin);
+  if (els.adminLocked) els.adminLocked.classList.toggle("hidden", !!isAdmin);
 
-  document.getElementById("productFormCard").classList.toggle("hidden", !isLogged);
-  document.getElementById("materialFormCard").classList.toggle("hidden", !isAdmin);
+  const productFormCard = document.getElementById("productFormCard");
+  const materialFormCard = document.getElementById("materialFormCard");
+
+  if (productFormCard) productFormCard.classList.toggle("hidden", !isLogged);
+  if (materialFormCard) materialFormCard.classList.toggle("hidden", !isAdmin);
 }
 
 async function loadProfile() {
@@ -112,21 +136,36 @@ async function checkUser() {
 
   const { data } = await supabase.auth.getUser();
   state.user = data?.user || null;
+
   if (state.user) await loadProfile();
+
   updateUI();
   await Promise.all([loadPosts(), loadProducts(), loadMaterials()]);
-  if (state.profile?.role === "admin") await loadMembers();
+
+  if (state.profile?.role === "admin") {
+    await loadMembers();
+  }
 }
 
 function renderConfigWarnings() {
   const warning = `Configure a SUPABASE_URL e a SUPABASE_ANON_KEY no arquivo app.js para ativar cadastro, login e banco de dados.`;
-  els.postsList.innerHTML = `<div class="post-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
-  els.productsList.innerHTML = `<div class="product-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
-  els.materialsList.innerHTML = `<div class="material-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
+
+  if (els.postsList) {
+    els.postsList.innerHTML = `<div class="post-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
+  }
+
+  if (els.productsList) {
+    els.productsList.innerHTML = `<div class="product-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
+  }
+
+  if (els.materialsList) {
+    els.materialsList.innerHTML = `<div class="material-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
+  }
 }
 
 async function loadPosts() {
-  if (!supabase) return;
+  if (!supabase || !els.postsList) return;
+
   const { data, error } = await supabase
     .from("community_posts")
     .select("id,content,created_at,profiles(nome)")
@@ -138,32 +177,43 @@ async function loadPosts() {
     return;
   }
 
-  els.postsList.innerHTML = data.map(post => `
+  els.postsList.innerHTML = data
+    .map(
+      (post) => `
     <article class="post-card">
       <h4>${post.profiles?.nome || "Membro"}</h4>
       <div class="post-meta">${formatDate(post.created_at)}</div>
       <p>${post.content}</p>
     </article>
-  `).join("");
+  `
+    )
+    .join("");
 }
 
 async function loadProducts() {
-  if (!supabase) return;
+  if (!supabase || !els.productsList) return;
+
   const isVip = state.profile && (state.profile.role === "vip" || state.profile.role === "admin");
+
   let query = supabase
     .from("products")
     .select("id,title,description,checkout_url,member_name,whatsapp,visibility,created_at")
     .order("created_at", { ascending: false });
 
-  if (!isVip) query = query.eq("visibility", "publico");
+  if (!isVip) {
+    query = query.eq("visibility", "publico");
+  }
 
   const { data, error } = await query;
+
   if (error || !data?.length) {
     els.productsList.innerHTML = `Nenhum produto cadastrado.`;
     return;
   }
 
-  els.productsList.innerHTML = data.map(item => `
+  els.productsList.innerHTML = data
+    .map(
+      (item) => `
     <article class="product-card">
       <h4>${item.title}</h4>
       <div class="card-meta">${item.visibility.toUpperCase()} • ${formatDate(item.created_at)}</div>
@@ -174,14 +224,20 @@ async function loadProducts() {
         <a class="btn btn-primary btn-small" target="_blank" href="${item.checkout_url}">Comprar agora</a>
       </div>
     </article>
-  `).join("");
+  `
+    )
+    .join("");
 }
 
 async function loadMaterials() {
-  if (!supabase) return;
+  if (!supabase || !els.materialsList) return;
+
   const role = state.profile?.role || "iniciante";
   let allowedLevels = ["iniciante"];
-  if (role === "vip" || role === "admin") allowedLevels = ["iniciante", "vip"];
+
+  if (role === "vip" || role === "admin") {
+    allowedLevels = ["iniciante", "vip"];
+  }
 
   const { data, error } = await supabase
     .from("materials")
@@ -194,7 +250,9 @@ async function loadMaterials() {
     return;
   }
 
-  els.materialsList.innerHTML = data.map(item => `
+  els.materialsList.innerHTML = data
+    .map(
+      (item) => `
     <article class="material-card">
       <h4>${item.title}</h4>
       <div class="card-meta">${item.level.toUpperCase()} • ${formatDate(item.created_at)}</div>
@@ -203,11 +261,14 @@ async function loadMaterials() {
         <a class="btn btn-primary btn-small" target="_blank" href="${item.url}">Abrir material</a>
       </div>
     </article>
-  `).join("");
+  `
+    )
+    .join("");
 }
 
 async function loadMembers() {
-  if (!supabase || state.profile?.role !== "admin") return;
+  if (!supabase || state.profile?.role !== "admin" || !els.membersList) return;
+
   const { data, error } = await supabase
     .from("profiles")
     .select("id,nome,email,role,status,created_at")
@@ -218,7 +279,9 @@ async function loadMembers() {
     return;
   }
 
-  els.membersList.innerHTML = data.map(member => `
+  els.membersList.innerHTML = data
+    .map(
+      (member) => `
     <article class="member-card">
       <h4>${member.nome || "Sem nome"}</h4>
       <div class="card-meta">${member.email || "-"} • ${formatDate(member.created_at)}</div>
@@ -230,18 +293,23 @@ async function loadMembers() {
         <button class="btn btn-small btn-secondary" onclick="updateMemberRole('${member.id}','admin')">Admin</button>
       </div>
     </article>
-  `).join("");
+  `
+    )
+    .join("");
 }
 
-window.updateMemberRole = async function(userId, role) {
+window.updateMemberRole = async function (userId, role) {
   if (!supabase || state.profile?.role !== "admin") return;
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role })
-    .eq("id", userId);
 
-  if (error) return alert(error.message);
+  const { error } = await supabase.from("profiles").update({ role }).eq("id", userId);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
   await loadMembers();
+
   if (state.user?.id === userId) {
     await loadProfile();
     await loadProducts();
@@ -249,130 +317,234 @@ window.updateMemberRole = async function(userId, role) {
   }
 };
 
-els.menuBtn.addEventListener("click", () => els.mainNav.classList.toggle("open"));
-els.openAuthBtn.addEventListener("click", () => {
-  if (state.user) {
-    document.getElementById("membros").scrollIntoView({ behavior: "smooth" });
-    return;
-  }
-  openAuthModal();
-});
-els.closeAuthBtn.addEventListener("click", closeAuthModal);
-els.closeAuthBackdrop.addEventListener("click", closeAuthModal);
-document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
-
-els.registerForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!supabase) return showMessage("Configure o Supabase no app.js.", "error");
-  hideMessage();
-
-  const nome = document.getElementById("registerNome").value.trim();
-  const email = document.getElementById("registerEmail").value.trim();
-  const telefone = sanitizePhone(document.getElementById("registerTelefone").value.trim());
-  const cpf = sanitizeCpf(document.getElementById("registerCpf").value.trim());
-  const senha = document.getElementById("registerSenha").value;
-
-  const { data, error } = await supabase.auth.signUp({ email, password: senha });
-  if (error) return showMessage(error.message, "error");
-
-  const user = data.user;
-  if (!user) return showMessage("Usuário não retornado no cadastro.", "error");
-
-  const { error: profileError } = await supabase.from("profiles").insert({
-    id: user.id,
-    nome,
-    email,
-    telefone,
-    cpf,
-    role: "iniciante",
-    status: "ativo"
+if (els.menuBtn && els.mainNav) {
+  els.menuBtn.addEventListener("click", () => {
+    els.mainNav.classList.toggle("open");
   });
+}
 
-  if (profileError) return showMessage(profileError.message, "error");
-  showMessage("Cadastro realizado com sucesso. Agora faça seu login.", "success");
-  els.registerForm.reset();
-  setTab("login");
+if (els.openAuthBtn) {
+  els.openAuthBtn.addEventListener("click", () => {
+    if (state.user) {
+      const membersSection = document.getElementById("membros");
+      if (membersSection) {
+        membersSection.scrollIntoView({ behavior: "smooth" });
+      }
+      return;
+    }
+    openAuthModal();
+  });
+}
+
+if (els.closeAuthBtn) {
+  els.closeAuthBtn.addEventListener("click", closeAuthModal);
+}
+
+if (els.closeAuthBackdrop) {
+  els.closeAuthBackdrop.addEventListener("click", closeAuthModal);
+}
+
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => setTab(btn.dataset.tab));
 });
 
-els.loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!supabase) return showMessage("Configure o Supabase no app.js.", "error");
-  hideMessage();
+if (els.registerForm) {
+  els.registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!supabase) {
+      showMessage("Configure o Supabase no app.js.", "error");
+      return;
+    }
 
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginSenha").value;
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return showMessage(error.message, "error");
+    hideMessage();
 
-  state.user = data.user;
-  await loadProfile();
-  await Promise.all([loadPosts(), loadProducts(), loadMaterials()]);
-  if (state.profile?.role === "admin") await loadMembers();
-  closeAuthModal();
-});
+    const nome = document.getElementById("registerNome").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
+    const telefone = sanitizePhone(document.getElementById("registerTelefone").value.trim());
+    const cpf = sanitizeCpf(document.getElementById("registerCpf").value.trim());
+    const senha = document.getElementById("registerSenha").value;
 
-els.logoutBtn.addEventListener("click", async () => {
-  if (!supabase) return;
-  await supabase.auth.signOut();
-  state.user = null;
-  state.profile = null;
-  updateUI();
-  await Promise.all([loadPosts(), loadProducts(), loadMaterials()]);
-});
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: senha,
+    });
 
-els.postForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!supabase || !state.user) return alert("Faça login para publicar.");
-  const content = document.getElementById("postContent").value.trim();
-  if (!content) return;
+    if (error) {
+      showMessage(error.message, "error");
+      return;
+    }
 
-  const { error } = await supabase.from("community_posts").insert({ user_id: state.user.id, content });
-  if (error) return alert(error.message);
-  e.target.reset();
-  await loadPosts();
-});
+    const user = data.user;
 
-els.productForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!supabase || !state.user) return alert("Faça login para cadastrar produtos.");
+    if (!user) {
+      showMessage("Usuário não retornado no cadastro.", "error");
+      return;
+    }
 
-  const payload = {
-    title: document.getElementById("productTitle").value.trim(),
-    description: document.getElementById("productDescription").value.trim(),
-    checkout_url: document.getElementById("productCheckout").value.trim(),
-    member_name: document.getElementById("productMemberName").value.trim(),
-    whatsapp: document.getElementById("productWhatsapp").value.trim(),
-    visibility: document.getElementById("productVisibility").value,
-    created_by: state.user.id,
-  };
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id: user.id,
+      nome,
+      email,
+      telefone,
+      cpf,
+      role: "iniciante",
+      status: "ativo",
+    });
 
-  const { error } = await supabase.from("products").insert(payload);
-  if (error) return alert(error.message);
-  e.target.reset();
-  await loadProducts();
-});
+    if (profileError) {
+      showMessage(profileError.message, "error");
+      return;
+    }
 
-els.materialForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!supabase || state.profile?.role !== "admin") return alert("Somente admin pode cadastrar materiais.");
+    showMessage("Cadastro realizado com sucesso. Agora faça seu login.", "success");
+    els.registerForm.reset();
+    setTab("login");
+  });
+}
 
-  const payload = {
-    title: document.getElementById("materialTitle").value.trim(),
-    description: document.getElementById("materialDescription").value.trim(),
-    url: document.getElementById("materialUrl").value.trim(),
-    level: document.getElementById("materialLevel").value,
-    created_by: state.user.id,
-  };
+if (els.loginForm) {
+  els.loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!supabase) {
+      showMessage("Configure o Supabase no app.js.", "error");
+      return;
+    }
 
-  const { error } = await supabase.from("materials").insert(payload);
-  if (error) return alert(error.message);
-  e.target.reset();
-  await loadMaterials();
-});
+    hideMessage();
 
-els.refreshPostsBtn.addEventListener("click", loadPosts);
-els.refreshProductsBtn.addEventListener("click", loadProducts);
-els.refreshMaterialsBtn.addEventListener("click", loadMaterials);
-els.refreshMembersBtn.addEventListener("click", loadMembers);
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginSenha").value;
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      showMessage(error.message, "error");
+      return;
+    }
+
+    state.user = data.user;
+    await loadProfile();
+    await Promise.all([loadPosts(), loadProducts(), loadMaterials()]);
+
+    if (state.profile?.role === "admin") {
+      await loadMembers();
+    }
+
+    closeAuthModal();
+  });
+}
+
+if (els.logoutBtn) {
+  els.logoutBtn.addEventListener("click", async () => {
+    if (!supabase) return;
+
+    await supabase.auth.signOut();
+    state.user = null;
+    state.profile = null;
+
+    updateUI();
+    await Promise.all([loadPosts(), loadProducts(), loadMaterials()]);
+  });
+}
+
+if (els.postForm) {
+  els.postForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!supabase || !state.user) {
+      alert("Faça login para publicar.");
+      return;
+    }
+
+    const content = document.getElementById("postContent").value.trim();
+    if (!content) return;
+
+    const { error } = await supabase.from("community_posts").insert({
+      user_id: state.user.id,
+      content,
+    });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    e.target.reset();
+    await loadPosts();
+  });
+}
+
+if (els.productForm) {
+  els.productForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!supabase || !state.user) {
+      alert("Faça login para cadastrar produtos.");
+      return;
+    }
+
+    const payload = {
+      title: document.getElementById("productTitle").value.trim(),
+      description: document.getElementById("productDescription").value.trim(),
+      checkout_url: document.getElementById("productCheckout").value.trim(),
+      member_name: document.getElementById("productMemberName").value.trim(),
+      whatsapp: document.getElementById("productWhatsapp").value.trim(),
+      visibility: document.getElementById("productVisibility").value,
+      created_by: state.user.id,
+    };
+
+    const { error } = await supabase.from("products").insert(payload);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    e.target.reset();
+    await loadProducts();
+  });
+}
+
+if (els.materialForm) {
+  els.materialForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!supabase || state.profile?.role !== "admin") {
+      alert("Somente admin pode cadastrar materiais.");
+      return;
+    }
+
+    const payload = {
+      title: document.getElementById("materialTitle").value.trim(),
+      description: document.getElementById("materialDescription").value.trim(),
+      url: document.getElementById("materialUrl").value.trim(),
+      level: document.getElementById("materialLevel").value,
+      created_by: state.user.id,
+    };
+
+    const { error } = await supabase.from("materials").insert(payload);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    e.target.reset();
+    await loadMaterials();
+  });
+}
+
+if (els.refreshPostsBtn) {
+  els.refreshPostsBtn.addEventListener("click", loadPosts);
+}
+
+if (els.refreshProductsBtn) {
+  els.refreshProductsBtn.addEventListener("click", loadProducts);
+}
+
+if (els.refreshMaterialsBtn) {
+  els.refreshMaterialsBtn.addEventListener("click", loadMaterials);
+}
+
+if (els.refreshMembersBtn) {
+  els.refreshMembersBtn.addEventListener("click", loadMembers);
+}
 
 checkUser();
