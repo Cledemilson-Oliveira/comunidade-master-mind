@@ -1,556 +1,384 @@
-const SUPABASE_URL = "https://bqskqjygbrkskqxurpir.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_htJYZHMv236djJoNWD2Ivw_DA_Eh8hu";
+const SUPABASE_URL = "COLE_SUA_SUPABASE_URL_AQUI";
+const SUPABASE_ANON_KEY = "COLE_SUA_SUPABASE_ANON_KEY_AQUI";
+
+const hasSupabaseConfig =
+  SUPABASE_URL && SUPABASE_URL.startsWith("http") &&
+  SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("COLE_SUA");
+
+const supabaseClient = hasSupabaseConfig
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 const state = {
-  currentUser: null,
-  currentProfile: null,
-  currentRoute: "inicio",
+  user: null,
+  profile: null,
 };
 
-let supabaseClient = null;
-if (SUPABASE_URL !== "COLE_AQUI_SUA_SUPABASE_URL" && SUPABASE_ANON_KEY !== "COLE_AQUI_SUA_SUPABASE_ANON_KEY") {
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const els = {
+  mainNav: document.getElementById("mainNav"),
+  menuBtn: document.getElementById("menuBtn"),
+  openAuthBtn: document.getElementById("openAuthBtn"),
+  authModal: document.getElementById("authModal"),
+  closeAuthBtn: document.getElementById("closeAuthBtn"),
+  closeAuthBackdrop: document.getElementById("closeAuthBackdrop"),
+  logoutBtn: document.getElementById("logoutBtn"),
+  messageBox: document.getElementById("messageBox"),
+  registerForm: document.getElementById("registerForm"),
+  loginForm: document.getElementById("loginForm"),
+  postForm: document.getElementById("postForm"),
+  productForm: document.getElementById("productForm"),
+  materialForm: document.getElementById("materialForm"),
+  postsList: document.getElementById("postsList"),
+  productsList: document.getElementById("productsList"),
+  materialsList: document.getElementById("materialsList"),
+  membersList: document.getElementById("membersList"),
+  profileNome: document.getElementById("profileNome"),
+  profileEmail: document.getElementById("profileEmail"),
+  profileNivel: document.getElementById("profileNivel"),
+  profileStatus: document.getElementById("profileStatus"),
+  vipLocked: document.getElementById("vipLocked"),
+  vipContent: document.getElementById("vipContent"),
+  adminPanel: document.getElementById("adminPanel"),
+  adminLocked: document.getElementById("adminLocked"),
+  refreshPostsBtn: document.getElementById("refreshPostsBtn"),
+  refreshProductsBtn: document.getElementById("refreshProductsBtn"),
+  refreshMaterialsBtn: document.getElementById("refreshMaterialsBtn"),
+  refreshMembersBtn: document.getElementById("refreshMembersBtn"),
+};
+
+function showMessage(text, type = "success") {
+  els.messageBox.textContent = text;
+  els.messageBox.className = `message ${type}`;
 }
 
-const routes = document.querySelectorAll("[data-route]");
-const views = document.querySelectorAll(".view");
-const authModal = document.getElementById("authModal");
-const openAuthBtn = document.getElementById("openAuthBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const toast = document.getElementById("toast");
-
-function showToast(message, type = "success") {
-  toast.textContent = message;
-  toast.className = `toast ${type}`;
-  toast.classList.remove("hidden");
-  setTimeout(() => toast.classList.add("hidden"), 3500);
+function hideMessage() {
+  els.messageBox.className = "message hidden";
+  els.messageBox.textContent = "";
 }
 
-function requireSupabase() {
-  if (!supabaseClient) {
-    showToast("Configure sua SUPABASE_URL e sua SUPABASE_ANON_KEY no arquivo app.js.", "error");
-    throw new Error("Supabase não configurado");
-  }
-}
+function openAuthModal() { els.authModal.classList.remove("hidden"); }
+function closeAuthModal() { els.authModal.classList.add("hidden"); hideMessage(); }
 
-function formatDigits(value) {
-  return (value || "").replace(/\D/g, "");
-}
-
-function initials(name = "MM") {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((item) => item[0]?.toUpperCase())
-    .join("") || "MM";
-}
-
-function setRoute(route) {
-  state.currentRoute = route;
-  views.forEach((view) => {
-    const match = view.id === route;
-    view.classList.toggle("hidden", !match);
-    view.classList.toggle("active", match);
+function setTab(tabName) {
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabName);
   });
-  routes.forEach((link) => link.classList.toggle("active", link.dataset.route === route));
-  window.location.hash = route;
+  els.registerForm.classList.toggle("hidden", tabName !== "register");
+  els.loginForm.classList.toggle("hidden", tabName !== "login");
 }
 
-routes.forEach((element) => {
-  element.addEventListener("click", (event) => {
-    event.preventDefault();
-    const route = element.dataset.route;
-    if (route === "vip" && !hasVipAccess()) {
-      setRoute("vip");
-      renderVipGate();
-      return;
-    }
-    if (route === "admin" && !isAdmin()) {
-      setRoute("admin");
-      renderAdminGate();
-      return;
-    }
-    setRoute(route);
-  });
-});
-
-function openAuth(tab = "login") {
-  authModal.classList.remove("hidden");
-  switchAuthTab(tab);
+function formatDate(date) {
+  if (!date) return "-";
+  return new Date(date).toLocaleString("pt-BR");
 }
 
-function closeAuth() {
-  authModal.classList.add("hidden");
+function sanitizePhone(v) { return (v || "").replace(/\D/g, ""); }
+function sanitizeCpf(v) { return (v || "").replace(/\D/g, ""); }
+
+function updateUI() {
+  const profile = state.profile;
+  const isLogged = !!state.user;
+  const isVip = profile && (profile.role === "vip" || profile.role === "admin");
+  const isAdmin = profile && profile.role === "admin";
+
+  els.profileNome.textContent = profile?.nome || "Visitante";
+  els.profileEmail.textContent = profile?.email || "-";
+  els.profileNivel.textContent = profile?.role || "iniciante";
+  els.profileStatus.textContent = isLogged ? "logado" : "não logado";
+  els.openAuthBtn.textContent = isLogged ? "Minha conta" : "Entrar";
+
+  els.vipLocked.classList.toggle("hidden", isVip);
+  els.vipContent.classList.toggle("hidden", !isVip);
+  els.adminPanel.classList.toggle("hidden", !isAdmin);
+  els.adminLocked.classList.toggle("hidden", isAdmin);
+
+  document.getElementById("productFormCard").classList.toggle("hidden", !isLogged);
+  document.getElementById("materialFormCard").classList.toggle("hidden", !isAdmin);
 }
 
-openAuthBtn.addEventListener("click", () => openAuth("login"));
-document.querySelectorAll("[data-open-auth]").forEach((button) => {
-  button.addEventListener("click", () => openAuth(button.dataset.openAuth || "cadastro"));
-});
-document.querySelectorAll("[data-close-auth]").forEach((element) => {
-  element.addEventListener("click", closeAuth);
-});
+async function loadProfile() {
+  if (!supabaseClient || !state.user) return;
 
-document.querySelectorAll(".tab-btn").forEach((btn) => {
-  btn.addEventListener("click", () => switchAuthTab(btn.dataset.authTab));
-});
-
-function switchAuthTab(tab) {
-  document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.authTab === tab));
-  document.getElementById("loginPane").classList.toggle("hidden", tab !== "login");
-  document.getElementById("registerPane").classList.toggle("hidden", tab !== "cadastro");
-}
-
-function isAdmin() {
-  return state.currentProfile?.role === "admin";
-}
-
-function hasVipAccess() {
-  const access = state.currentProfile?.access_level;
-  return access === "vip" || isAdmin();
-}
-
-function hasMemberAccess() {
-  return !!state.currentUser;
-}
-
-function renderProfile() {
-  const profile = state.currentProfile;
-  document.getElementById("profileNome").textContent = profile?.full_name || "Visitante";
-  document.getElementById("profileEmail").textContent = profile?.email || "Entre para acessar sua área.";
-  document.getElementById("profileAccess").textContent = profile?.access_level || "publico";
-  document.getElementById("profileWhatsapp").textContent = profile?.whatsapp || "-";
-  document.getElementById("profileStatus").textContent = profile?.member_status || "-";
-  document.getElementById("profileRole").textContent = profile?.role || "visitante";
-  document.getElementById("memberAvatar").textContent = initials(profile?.full_name || "MM");
-
-  logoutBtn.classList.toggle("hidden", !state.currentUser);
-  openAuthBtn.classList.toggle("hidden", !!state.currentUser);
-
-  document.querySelectorAll(".admin-only").forEach((element) => {
-    element.classList.toggle("hidden", !isAdmin());
-  });
-
-  renderVipGate();
-  renderAdminGate();
-}
-
-function renderVipGate() {
-  document.getElementById("vipLocked").classList.toggle("hidden", hasVipAccess());
-  document.getElementById("vipContent").classList.toggle("hidden", !hasVipAccess());
-}
-
-function renderAdminGate() {
-  document.getElementById("adminLocked").classList.toggle("hidden", isAdmin());
-  document.getElementById("adminContent").classList.toggle("hidden", !isAdmin());
-}
-
-async function fetchProfile(userId) {
-  requireSupabase();
   const { data, error } = await supabaseClient
     .from("profiles")
-    .select("id, full_name, email, whatsapp, cpf, access_level, role, member_status")
-    .eq("id", userId)
+    .select("id,nome,email,telefone,cpf,role,status")
+    .eq("id", state.user.id)
     .single();
 
-  if (error) {
-    showToast("Não foi possível carregar o perfil.", "error");
-    return null;
-  }
-  return data;
+  if (!error) state.profile = data;
+  updateUI();
 }
 
-async function handleRegister(event) {
-  event.preventDefault();
-  requireSupabase();
-
-  const full_name = document.getElementById("registerName").value.trim();
-  const email = document.getElementById("registerEmail").value.trim();
-  const whatsapp = formatDigits(document.getElementById("registerWhatsapp").value);
-  const cpf = formatDigits(document.getElementById("registerCpf").value);
-  const password = document.getElementById("registerPassword").value;
-
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-  });
-
-  if (error) {
-    showToast(error.message, "error");
+async function checkUser() {
+  if (!supabaseClient) {
+    updateUI();
+    renderConfigWarnings();
     return;
   }
 
-  const user = data.user;
-  if (!user) {
-    showToast("Cadastro criado, mas o usuário não foi retornado.", "error");
-    return;
-  }
-
-  const { error: profileError } = await supabaseClient.from("profiles").insert({
-    id: user.id,
-    full_name,
-    email,
-    whatsapp,
-    cpf,
-    access_level: "iniciante",
-    role: "member",
-    member_status: "ativo",
-  });
-
-  if (profileError) {
-    showToast(profileError.message, "error");
-    return;
-  }
-
-  showToast("Cadastro realizado com sucesso. Agora faça seu login.", "success");
-  event.target.reset();
-  switchAuthTab("login");
+  const { data } = await supabaseClient.auth.getUser();
+  state.user = data?.user || null;
+  if (state.user) await loadProfile();
+  updateUI();
+  await Promise.all([loadPosts(), loadProducts(), loadMaterials()]);
+  if (state.profile?.role === "admin") await loadMembers();
 }
 
-async function handleLogin(event) {
-  event.preventDefault();
-  requireSupabase();
-
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value;
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) {
-    showToast(error.message, "error");
-    return;
-  }
-
-  state.currentUser = data.user;
-  state.currentProfile = await fetchProfile(data.user.id);
-  renderProfile();
-  closeAuth();
-  showToast("Login realizado com sucesso.", "success");
-  document.getElementById("loginForm").reset();
-  await hydrateData();
-  setRoute("membros");
-}
-
-async function handleLogout() {
-  requireSupabase();
-  const { error } = await supabaseClient.auth.signOut();
-  if (error) {
-    showToast(error.message, "error");
-    return;
-  }
-  state.currentUser = null;
-  state.currentProfile = null;
-  renderProfile();
-  showToast("Você saiu da conta.", "success");
-  setRoute("inicio");
-  await hydrateData();
-}
-
-async function loadProducts() {
-  requireSupabase();
-  const { data, error } = await supabaseClient
-    .from("products")
-    .select("id, title, description, price_label, checkout_url, support_whatsapp, seller_name, status")
-    .eq("status", "ativo")
-    .order("created_at", { ascending: false });
-
-  const productsList = document.getElementById("productsList");
-  if (error) {
-    productsList.innerHTML = `<div class="empty-state">Erro ao carregar produtos.</div>`;
-    return;
-  }
-
-  if (!data.length) {
-    productsList.innerHTML = `<div class="empty-state">Nenhum produto ativo no momento.</div>`;
-    return;
-  }
-
-  productsList.innerHTML = data.map((item) => `
-    <article class="product-card">
-      <h4>${escapeHtml(item.title)}</h4>
-      <p>${escapeHtml(item.description)}</p>
-      <div class="price">${escapeHtml(item.price_label)}</div>
-      <div class="product-meta">
-        <span class="meta-badge">Membro: ${escapeHtml(item.seller_name || "Comunidade")}</span>
-        <span class="meta-badge">Suporte: ${escapeHtml(item.support_whatsapp || "-")}</span>
-      </div>
-      <div class="product-actions">
-        <a class="btn btn-primary" href="${item.checkout_url}" target="_blank" rel="noopener noreferrer">Ir para checkout</a>
-        ${item.support_whatsapp ? `<a class="btn btn-secondary" href="https://wa.me/${item.support_whatsapp}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : ""}
-      </div>
-    </article>
-  `).join("");
+function renderConfigWarnings() {
+  const warning = `Configure a SUPABASE_URL e a SUPABASE_ANON_KEY no arquivo app.js para ativar cadastro, login e banco de dados.`;
+  els.postsList.innerHTML = `<div class="post-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
+  els.productsList.innerHTML = `<div class="product-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
+  els.materialsList.innerHTML = `<div class="material-card"><h4>Configuração necessária</h4><p>${warning}</p></div>`;
 }
 
 async function loadPosts() {
-  requireSupabase();
+  if (!supabaseClient) return;
   const { data, error } = await supabaseClient
     .from("community_posts")
-    .select("id, title, content, author_name, created_at")
+    .select("id,content,created_at,profiles(nome)")
     .order("created_at", { ascending: false })
     .limit(20);
 
-  const postsList = document.getElementById("postsList");
-  if (error) {
-    postsList.innerHTML = `<div class="empty-state">Erro ao carregar publicações.</div>`;
+  if (error || !data?.length) {
+    els.postsList.innerHTML = `Nenhuma publicação ainda.`;
     return;
   }
 
-  if (!data.length) {
-    postsList.innerHTML = `<div class="empty-state">Nenhuma publicação ainda.</div>`;
-    return;
-  }
-
-  postsList.innerHTML = data.map((item) => `
+  els.postsList.innerHTML = data.map(post => `
     <article class="post-card">
-      <h4>${escapeHtml(item.title)}</h4>
-      <p>${escapeHtml(item.content)}</p>
-      <div class="post-meta">
-        <span class="meta-badge">Autor: ${escapeHtml(item.author_name || "Membro")}</span>
-        <span class="meta-badge">${new Date(item.created_at).toLocaleString("pt-BR")}</span>
+      <h4>${post.profiles?.nome || "Membro"}</h4>
+      <div class="post-meta">${formatDate(post.created_at)}</div>
+      <p>${post.content}</p>
+    </article>
+  `).join("");
+}
+
+async function loadProducts() {
+  if (!supabaseClient) return;
+  const isVip = state.profile && (state.profile.role === "vip" || state.profile.role === "admin");
+  let query = supabaseClient
+    .from("products")
+    .select("id,title,description,checkout_url,member_name,whatsapp,visibility,created_at")
+    .order("created_at", { ascending: false });
+
+  if (!isVip) query = query.eq("visibility", "publico");
+
+  const { data, error } = await query;
+  if (error || !data?.length) {
+    els.productsList.innerHTML = `Nenhum produto cadastrado.`;
+    return;
+  }
+
+  els.productsList.innerHTML = data.map(item => `
+    <article class="product-card">
+      <h4>${item.title}</h4>
+      <div class="card-meta">${item.visibility.toUpperCase()} • ${formatDate(item.created_at)}</div>
+      <p>${item.description}</p>
+      <p><strong>Membro responsável:</strong> ${item.member_name}</p>
+      <p><strong>Suporte:</strong> <a class="support-link" target="_blank" href="https://wa.me/${sanitizePhone(item.whatsapp)}">${item.whatsapp}</a></p>
+      <div class="card-actions">
+        <a class="btn btn-primary btn-small" target="_blank" href="${item.checkout_url}">Comprar agora</a>
       </div>
     </article>
   `).join("");
 }
 
-function materialVisibleForUser(visibility) {
-  if (visibility === "publico") return true;
-  if (visibility === "membro") return hasMemberAccess();
-  if (visibility === "vip") return hasVipAccess();
-  return false;
-}
-
 async function loadMaterials() {
-  requireSupabase();
+  if (!supabaseClient) return;
+  const role = state.profile?.role || "iniciante";
+  let allowedLevels = ["iniciante"];
+  if (role === "vip" || role === "admin") allowedLevels = ["iniciante", "vip"];
+
   const { data, error } = await supabaseClient
     .from("materials")
-    .select("id, title, description, link_url, visibility, created_at")
+    .select("id,title,description,url,level,created_at")
+    .in("level", allowedLevels)
     .order("created_at", { ascending: false });
 
-  const materialsList = document.getElementById("materialsList");
-  if (error) {
-    materialsList.innerHTML = `<div class="empty-state">Erro ao carregar materiais.</div>`;
+  if (error || !data?.length) {
+    els.materialsList.innerHTML = `Nenhum material cadastrado.`;
     return;
   }
 
-  const filtered = data.filter((item) => materialVisibleForUser(item.visibility));
-  if (!filtered.length) {
-    materialsList.innerHTML = `<div class="empty-state">Nenhum material disponível para seu nível de acesso.</div>`;
-    return;
-  }
-
-  materialsList.innerHTML = filtered.map((item) => `
+  els.materialsList.innerHTML = data.map(item => `
     <article class="material-card">
-      <h4>${escapeHtml(item.title)}</h4>
-      <p>${escapeHtml(item.description)}</p>
-      <div class="material-meta">
-        <span class="meta-badge">Visibilidade: ${escapeHtml(item.visibility)}</span>
-        <span class="meta-badge">${new Date(item.created_at).toLocaleString("pt-BR")}</span>
-      </div>
-      <div class="product-actions">
-        <a class="btn btn-primary" href="${item.link_url}" target="_blank" rel="noopener noreferrer">Abrir material</a>
+      <h4>${item.title}</h4>
+      <div class="card-meta">${item.level.toUpperCase()} • ${formatDate(item.created_at)}</div>
+      <p>${item.description}</p>
+      <div class="card-actions">
+        <a class="btn btn-primary btn-small" target="_blank" href="${item.url}">Abrir material</a>
       </div>
     </article>
   `).join("");
 }
 
 async function loadMembers() {
-  if (!isAdmin()) return;
-  requireSupabase();
+  if (!supabaseClient || state.profile?.role !== "admin") return;
   const { data, error } = await supabaseClient
     .from("profiles")
-    .select("id, full_name, email, access_level, role, member_status")
+    .select("id,nome,email,role,status,created_at")
     .order("created_at", { ascending: false });
 
-  const membersList = document.getElementById("membersList");
-  if (error) {
-    membersList.innerHTML = `<div class="empty-state">Erro ao carregar membros.</div>`;
+  if (error || !data?.length) {
+    els.membersList.innerHTML = `Nenhum membro carregado.`;
     return;
   }
 
-  if (!data.length) {
-    membersList.innerHTML = `<div class="empty-state">Nenhum membro encontrado.</div>`;
-    return;
-  }
-
-  membersList.innerHTML = data.map((member) => `
-    <article class="member-row">
-      <div>
-        <strong>${escapeHtml(member.full_name || "Sem nome")}</strong>
-        <p>${escapeHtml(member.email || "-")}</p>
-      </div>
-      <div class="member-meta"><span class="meta-badge">${escapeHtml(member.member_status || "-")}</span></div>
-      <select data-member-id="${member.id}" data-type="access">
-        <option value="iniciante" ${member.access_level === "iniciante" ? "selected" : ""}>iniciante</option>
-        <option value="vip" ${member.access_level === "vip" ? "selected" : ""}>vip</option>
-      </select>
-      <select data-member-id="${member.id}" data-type="role">
-        <option value="member" ${member.role === "member" ? "selected" : ""}>member</option>
-        <option value="admin" ${member.role === "admin" ? "selected" : ""}>admin</option>
-      </select>
-      <div class="member-actions">
-        <button class="btn btn-small" data-save-member="${member.id}">Salvar</button>
+  els.membersList.innerHTML = data.map(member => `
+    <article class="member-card">
+      <h4>${member.nome || "Sem nome"}</h4>
+      <div class="card-meta">${member.email || "-"} • ${formatDate(member.created_at)}</div>
+      <p><strong>Nível:</strong> ${member.role}</p>
+      <p><strong>Status:</strong> ${member.status || "ativo"}</p>
+      <div class="member-controls">
+        <button class="btn btn-small btn-primary" onclick="updateMemberRole('${member.id}','iniciante')">Iniciante</button>
+        <button class="btn btn-small btn-primary" onclick="updateMemberRole('${member.id}','vip')">VIP</button>
+        <button class="btn btn-small btn-secondary" onclick="updateMemberRole('${member.id}','admin')">Admin</button>
       </div>
     </article>
   `).join("");
-
-  document.querySelectorAll("[data-save-member]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const memberId = button.dataset.saveMember;
-      const access = document.querySelector(`select[data-member-id="${memberId}"][data-type="access"]`).value;
-      const role = document.querySelector(`select[data-member-id="${memberId}"][data-type="role"]`).value;
-      await updateMemberAccess(memberId, access, role);
-    });
-  });
 }
 
-async function updateMemberAccess(memberId, accessLevel, role) {
-  requireSupabase();
+window.updateMemberRole = async function(userId, role) {
+  if (!supabaseClient || state.profile?.role !== "admin") return;
   const { error } = await supabaseClient
     .from("profiles")
-    .update({ access_level: accessLevel, role })
-    .eq("id", memberId);
+    .update({ role })
+    .eq("id", userId);
 
-  if (error) {
-    showToast(error.message, "error");
-    return;
-  }
-  showToast("Membro atualizado com sucesso.", "success");
-  if (state.currentUser?.id === memberId) {
-    state.currentProfile = await fetchProfile(memberId);
-    renderProfile();
-  }
+  if (error) return alert(error.message);
   await loadMembers();
-}
+  if (state.user?.id === userId) {
+    await loadProfile();
+    await loadProducts();
+    await loadMaterials();
+  }
+};
 
-async function handlePostSubmit(event) {
-  event.preventDefault();
-  requireSupabase();
-  if (!hasMemberAccess()) {
-    showToast("Faça login para publicar no mural.", "error");
-    openAuth("login");
+els.menuBtn.addEventListener("click", () => els.mainNav.classList.toggle("open"));
+els.openAuthBtn.addEventListener("click", () => {
+  if (state.user) {
+    document.getElementById("membros").scrollIntoView({ behavior: "smooth" });
     return;
   }
+  openAuthModal();
+});
+els.closeAuthBtn.addEventListener("click", closeAuthModal);
+els.closeAuthBackdrop.addEventListener("click", closeAuthModal);
+document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
 
-  const title = document.getElementById("postTitle").value.trim();
-  const content = document.getElementById("postContent").value.trim();
-  const { error } = await supabaseClient.from("community_posts").insert({
-    user_id: state.currentUser.id,
-    author_name: state.currentProfile?.full_name || "Membro",
-    title,
-    content,
+els.registerForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!supabaseClient) return showMessage("Configure o Supabase no app.js.", "error");
+  hideMessage();
+
+  const nome = document.getElementById("registerNome").value.trim();
+  const email = document.getElementById("registerEmail").value.trim();
+  const telefone = sanitizePhone(document.getElementById("registerTelefone").value.trim());
+  const cpf = sanitizeCpf(document.getElementById("registerCpf").value.trim());
+  const senha = document.getElementById("registerSenha").value;
+
+  const { data, error } = await supabaseClient.auth.signUp({ email, password: senha });
+  if (error) return showMessage(error.message, "error");
+
+  const user = data.user;
+  if (!user) return showMessage("Usuário não retornado no cadastro.", "error");
+
+  const { error: profileError } = await supabaseClient.from("profiles").insert({
+    id: user.id,
+    nome,
+    email,
+    telefone,
+    cpf,
+    role: "iniciante",
+    status: "ativo"
   });
 
-  if (error) {
-    showToast(error.message, "error");
-    return;
-  }
+  if (profileError) return showMessage(profileError.message, "error");
+  showMessage("Cadastro realizado com sucesso. Agora faça seu login.", "success");
+  els.registerForm.reset();
+  setTab("login");
+});
 
-  event.target.reset();
-  showToast("Publicação enviada com sucesso.", "success");
+els.loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!supabaseClient) return showMessage("Configure o Supabase no app.js.", "error");
+  hideMessage();
+
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginSenha").value;
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) return showMessage(error.message, "error");
+
+  state.user = data.user;
+  await loadProfile();
+  await Promise.all([loadPosts(), loadProducts(), loadMaterials()]);
+  if (state.profile?.role === "admin") await loadMembers();
+  closeAuthModal();
+});
+
+els.logoutBtn.addEventListener("click", async () => {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+  state.user = null;
+  state.profile = null;
+  updateUI();
+  await Promise.all([loadPosts(), loadProducts(), loadMaterials()]);
+});
+
+els.postForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!supabaseClient || !state.user) return alert("Faça login para publicar.");
+  const content = document.getElementById("postContent").value.trim();
+  if (!content) return;
+
+  const { error } = await supabaseClient.from("community_posts").insert({ user_id: state.user.id, content });
+  if (error) return alert(error.message);
+  e.target.reset();
   await loadPosts();
-}
+});
 
-async function handleProductSubmit(event) {
-  event.preventDefault();
-  requireSupabase();
-  if (!isAdmin()) {
-    showToast("Somente admin pode cadastrar produtos.", "error");
-    return;
-  }
+els.productForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!supabaseClient || !state.user) return alert("Faça login para cadastrar produtos.");
 
   const payload = {
     title: document.getElementById("productTitle").value.trim(),
     description: document.getElementById("productDescription").value.trim(),
-    price_label: document.getElementById("productPrice").value.trim(),
     checkout_url: document.getElementById("productCheckout").value.trim(),
-    support_whatsapp: formatDigits(document.getElementById("productWhatsapp").value),
-    seller_name: document.getElementById("productSellerName").value.trim(),
-    status: document.getElementById("productStatus").value,
-    created_by: state.currentUser.id,
+    member_name: document.getElementById("productMemberName").value.trim(),
+    whatsapp: document.getElementById("productWhatsapp").value.trim(),
+    visibility: document.getElementById("productVisibility").value,
+    created_by: state.user.id,
   };
 
   const { error } = await supabaseClient.from("products").insert(payload);
-  if (error) {
-    showToast(error.message, "error");
-    return;
-  }
-
-  event.target.reset();
-  showToast("Produto cadastrado com sucesso.", "success");
+  if (error) return alert(error.message);
+  e.target.reset();
   await loadProducts();
-}
+});
 
-async function handleMaterialSubmit(event) {
-  event.preventDefault();
-  requireSupabase();
-  if (!isAdmin()) {
-    showToast("Somente admin pode cadastrar materiais.", "error");
-    return;
-  }
+els.materialForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!supabaseClient || state.profile?.role !== "admin") return alert("Somente admin pode cadastrar materiais.");
 
   const payload = {
     title: document.getElementById("materialTitle").value.trim(),
     description: document.getElementById("materialDescription").value.trim(),
-    link_url: document.getElementById("materialLink").value.trim(),
-    visibility: document.getElementById("materialVisibility").value,
-    created_by: state.currentUser.id,
+    url: document.getElementById("materialUrl").value.trim(),
+    level: document.getElementById("materialLevel").value,
+    created_by: state.user.id,
   };
 
   const { error } = await supabaseClient.from("materials").insert(payload);
-  if (error) {
-    showToast(error.message, "error");
-    return;
-  }
-
-  event.target.reset();
-  showToast("Material salvo com sucesso.", "success");
+  if (error) return alert(error.message);
+  e.target.reset();
   await loadMaterials();
-}
+});
 
-function escapeHtml(value = "") {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+els.refreshPostsBtn.addEventListener("click", loadPosts);
+els.refreshProductsBtn.addEventListener("click", loadProducts);
+els.refreshMaterialsBtn.addEventListener("click", loadMaterials);
+els.refreshMembersBtn.addEventListener("click", loadMembers);
 
-async function hydrateData() {
-  if (!supabaseClient) return;
-  await Promise.all([loadProducts(), loadPosts(), loadMaterials(), loadMembers()]);
-}
-
-async function restoreSession() {
-  if (!supabaseClient) return;
-  const { data } = await supabaseClient.auth.getUser();
-  if (data?.user) {
-    state.currentUser = data.user;
-    state.currentProfile = await fetchProfile(data.user.id);
-  }
-  renderProfile();
-  await hydrateData();
-}
-
-function bootstrapRoute() {
-  const hash = window.location.hash.replace("#", "") || "inicio";
-  const exists = document.getElementById(hash);
-  setRoute(exists ? hash : "inicio");
-}
-
-window.addEventListener("hashchange", bootstrapRoute);
-
-document.getElementById("registerForm").addEventListener("submit", handleRegister);
-document.getElementById("loginForm").addEventListener("submit", handleLogin);
-document.getElementById("postForm").addEventListener("submit", handlePostSubmit);
-document.getElementById("productForm").addEventListener("submit", handleProductSubmit);
-document.getElementById("materialForm").addEventListener("submit", handleMaterialSubmit);
-logoutBtn.addEventListener("click", handleLogout);
-
-document.getElementById("refreshPostsBtn").addEventListener("click", loadPosts);
-document.getElementById("refreshMaterialsBtn").addEventListener("click", loadMaterials);
-document.getElementById("refreshMembersBtn").addEventListener("click", loadMembers);
-
-bootstrapRoute();
-restoreSession();
+checkUser();
